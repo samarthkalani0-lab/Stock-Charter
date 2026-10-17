@@ -1,6 +1,7 @@
 # Runs every day on GitHub's servers, so the log keeps going when your computer is off.
-# It adds the day's prices to data/prices.csv, rebuilds the dashboard and saves both
-# back to the repository. You can also run it by hand: Actions tab → Daily prices → Run workflow.
+# It adds the day's prices to data/prices.csv, rebuilds the dashboard, saves both back
+# to the repository and publishes the dashboard to GitHub Pages.
+# You can also run it by hand: Actions tab → Daily prices → Run workflow.
 name: Daily prices
 
 on:
@@ -21,7 +22,9 @@ on:
       - "requirements.txt"
 
 permissions:
-  contents: write
+  contents: write   # save the log and dashboard back to the repository
+  pages: write      # publish the dashboard to GitHub Pages
+  id-token: write   # required by GitHub Pages
 
 concurrency:
   group: daily-prices
@@ -31,6 +34,10 @@ jobs:
   log:
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    # The public dashboard: https://samarthkalani0-lab.github.io/Stock-Charter/
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
 
@@ -58,3 +65,11 @@ jobs:
             git commit -m "Log prices for $(date -u +%Y-%m-%d)"
             git push
           fi
+
+      # Publish the dashboard folder as the public website (its index.html is the home page).
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dashboard
+
+      - id: deploy
+        uses: actions/deploy-pages@v4
