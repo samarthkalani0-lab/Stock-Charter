@@ -5,29 +5,14 @@
 
 import json
 import re
+import sys
 from datetime import date
 
 import pandas as pd
 import yfinance as yf
 
-# The mock portfolio from project 1: ticker -> (name, shares bought).
-# Shares come from the spreadsheet; each stock was given Rs 9,000.
-PORTFOLIO = {
-    "AAPL": ("Apple", 0.3059),
-    "ETERNAL.NS": ("Eternal (Zomato)", 28),
-    "RELIANCE.NS": ("Reliance Industries", 6),
-    "ANGELONE.NS": ("Angel One", 29),
-    "INFY.NS": ("Infosys", 7),
-    "LICI.NS": ("LIC", 23),
-    "ADANIPORTS.NS": ("Adani Ports", 5),
-    "HDFCBANK.NS": ("HDFC Bank", 12),
-    "SBIN.NS": ("State Bank of India", 8),
-    "DOMS.NS": ("DOMS Industries", 3),
-    "IOC.NS": ("Indian Oil Corporation", 62),
-}
-INDEX = ("^NSEI", "Nifty 50")
-STARTING_CAPITAL = 100000
-BUY_DATE = "2026-08-05"
+from portfolio import BUY_DATE, FX, INDEX, PORTFOLIO, STARTING_CAPITAL
+
 MA_DAYS = 50
 PAGE = "dashboard/index.html"
 
@@ -36,6 +21,9 @@ def download(ticker):
     """Daily open and close prices for the last 18 months (extra history so the
     50-day average already exists at the start of the 1-year chart)."""
     data = yf.download(ticker, period="18mo", auto_adjust=True, progress=False)
+    if data.empty:
+        sys.exit(f"No prices came back for {ticker}. Yahoo Finance may be down, or the ticker "
+                 "has changed. Nothing was updated; try again later.")
     data.columns = data.columns.get_level_values(0)   # flatten yfinance's two-level column names
     return data[["Open", "Close"]].dropna()
 
@@ -102,7 +90,7 @@ nifty = {"ticker": INDEX[0], "name": INDEX[1], "currency": "points",
 
 # Portfolio value in rupees on each NSE trading day since buying.
 # Apple is priced in dollars, so it is converted with that day's USD/INR rate.
-usd_inr = download("INR=X")["Close"]
+usd_inr = download(FX[0])["Close"]
 days = nifty_prices.index[nifty_prices.index >= BUY_DATE]
 table = pd.DataFrame(closes).reindex(days.union(pd.DatetimeIndex(usd_inr.index))).ffill().reindex(days)
 table["AAPL"] = table["AAPL"] * usd_inr.reindex(table.index, method="ffill")
@@ -135,7 +123,10 @@ data = {
 with open(PAGE, encoding="utf-8") as f:
     page = f.read()
 block = '<script id="portfolio-data">\nwindow.PORTFOLIO_DATA = ' + json.dumps(data) + ';\n</script>'
-page = re.sub(r'<script id="portfolio-data">.*?</script>', lambda _: block, page, count=1, flags=re.S)
+page, found = re.subn(r'<script id="portfolio-data">.*?</script>', lambda _: block, page, count=1, flags=re.S)
+if not found:
+    sys.exit(f'Couldn\'t find <script id="portfolio-data"> in {PAGE}, so nothing was updated. '
+             "Put that tag back exactly as it was.")
 with open(PAGE, "w", encoding="utf-8") as f:
     f.write(page)
 

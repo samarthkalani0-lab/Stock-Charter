@@ -61,6 +61,18 @@ Then open `dashboard/index.html` in a browser. The page has:
 
 Run `build_dashboard.py` again any time to refresh the numbers.
 
+## Daily price log (runs by itself)
+
+`log_prices.py` adds every trading day's opening and closing price for all 11 stocks, the Nifty 50 and the USD/INR rate to [`data/prices.csv`](data/prices.csv). The log starts on the buy date, 5 August 2026. You can open the file in Excel or Google Sheets. Its columns are:
+
+`date, ticker, name, open, close, currency`
+
+Running it again never creates duplicates. Each run re-checks the last 10 days, so a missed day fills itself in.
+
+Once this repository is on GitHub, the log keeps itself up to date. The workflow in `.github/workflows/daily-prices.yml` runs on GitHub's servers every day at 4:00 am India time, after both markets have closed. It logs the day's prices, rebuilds the dashboard and saves both back to the repository. It doesn't need your computer to be on. To run it straight away, open the **Actions** tab, choose **Daily prices** and click **Run workflow**.
+
+The stocks are listed once, in `portfolio.py`. Both the log and the dashboard read them from there.
+
 ## What each part of the code does
 
 | Code | What it does |

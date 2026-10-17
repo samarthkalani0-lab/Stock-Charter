@@ -1,3 +1,5 @@
-yfinance
-matplotlib
-pandas
+# Exact versions the scripts were tested with, so a library update can't quietly
+# break the daily job. Update them on purpose, then run both scripts once to check.
+yfinance==1.7.0
+pandas==3.0.6
+matplotlib==3.11.2
