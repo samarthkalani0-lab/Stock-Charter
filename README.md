@@ -1,5 +1,7 @@
 # Python Stock Price Charter
 
+**Live dashboard:** [samarthkalani0-lab.github.io/Stock-Charter](https://samarthkalani0-lab.github.io/Stock-Charter/). It updates itself every day.
+
 A short Python program that downloads daily prices for the 11 stocks in my mock portfolio (project 1) and the Nifty 50 index, calculates a **50-day moving average**, and plots both on one chart for each stock. A dashed line marks the day I bought the portfolio (5 August 2026).
 
 ![Apple chart](charts/AAPL.png)
