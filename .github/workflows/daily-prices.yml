@@ -14,6 +14,7 @@ on:
     branches: [main]
     paths:
       - ".github/workflows/daily-prices.yml"
+      - "portfolio.csv"
       - "log_prices.py"
       - "build_dashboard.py"
       - "portfolio.py"

@@ -1,49 +1,47 @@
 # Daily price log: adds each trading day's opening and closing price for every stock
-# in the portfolio (plus the Nifty 50 and the USD/INR rate) to data/prices.csv.
+# in portfolio.csv (plus the Nifty 50 and the USD/INR rate) to data/prices.csv.
 #
 # Safe to run as often as you like. Each run re-checks the last 10 days and fills in
 # anything missing, so a skipped day (computer off, Yahoo down) catches up by itself.
-# The first run fills in everything since the buy date.
+# A stock you've just added to portfolio.csv gets its whole history since its buy date.
 #
 # Prices are the real traded prices, not adjusted for later dividends or splits, so a
 # day's row never changes once it's logged.
 
 import os
 import sys
-from datetime import timedelta
+from datetime import date, timedelta
 
 import pandas as pd
 import yfinance as yf
 
-from portfolio import BUY_DATE, FX, INDEX, PORTFOLIO
+from portfolio import FIRST_BUY_DATE, FX, INDEX, PORTFOLIO, currency
 
 LOG = os.path.join("data", "prices.csv")
 COLUMNS = ["date", "ticker", "name", "open", "close", "currency"]
 RECHECK_DAYS = 10
 
-TRACKED = {t: name for t, (name, _) in PORTFOLIO.items()}
-TRACKED[INDEX[0]] = INDEX[1]
-TRACKED[FX[0]] = FX[1]
+# ticker -> (name, the earliest day we want in the log)
+TRACKED = {t: (s["name"], s["buy_date"]) for t, s in PORTFOLIO.items()}
+TRACKED[INDEX[0]] = (INDEX[1], FIRST_BUY_DATE)
+TRACKED[FX[0]] = (FX[1], FIRST_BUY_DATE)
 
-
-def currency(ticker):
-    if ticker.startswith("^"):
-        return "points"
-    if ticker.endswith(".NS") or ticker.endswith(".BO") or ticker == FX[0]:
-        return "INR"
-    return "USD"
-
-
-# Start from the buy date the first time, otherwise a few days before the last entry.
 if os.path.exists(LOG):
     log = pd.read_csv(LOG, dtype={"date": str})
-    start = (pd.Timestamp(log["date"].max()) - timedelta(days=RECHECK_DAYS)).strftime("%Y-%m-%d")
 else:
     log = pd.DataFrame(columns=COLUMNS)
-    start = BUY_DATE
+first_logged = log.groupby("ticker")["date"].min().to_dict()
+last_logged = log.groupby("ticker")["date"].max().to_dict()
 
 new_rows, failed = [], []
-for ticker, name in TRACKED.items():
+for ticker, (name, wanted_from) in TRACKED.items():
+    if first_logged.get(ticker, "9999") <= wanted_from:
+        # Already logged back to the day we need: re-check from a few days before the
+        # last entry, which also fills any gap if the job didn't run for a while.
+        start = (date.fromisoformat(last_logged[ticker]) - timedelta(days=RECHECK_DAYS)).isoformat()
+    else:
+        # A new stock, or an earlier buy date: fetch everything from that day.
+        start = wanted_from
     data = yf.download(ticker, start=start, auto_adjust=False, progress=False)
     if data.empty:
         failed.append(ticker)
@@ -66,7 +64,14 @@ log = (pd.concat([log, fresh]) if before else fresh) \
 
 os.makedirs("data", exist_ok=True)
 log.to_csv(LOG, index=False)
-
 print(f"{LOG}: {len(log) - before} new rows, {len(log)} in total, latest day {log['date'].max()}.")
-if failed:
-    print("No data this time for: " + ", ".join(failed) + ". They'll be retried on the next run.")
+
+# A ticker that has never returned any prices is almost certainly mistyped: fail loudly
+# (GitHub emails you when the daily job fails). Others are probably a brief Yahoo hiccup.
+never_seen = [t for t in failed if t not in first_logged]
+retry = [t for t in failed if t in first_logged]
+if retry:
+    print("No data this time for: " + ", ".join(retry) + ". They'll be retried on the next run.")
+if never_seen:
+    sys.exit("Yahoo Finance has no prices for: " + ", ".join(never_seen) + ". Check the ticker in "
+             "portfolio.csv against finance.yahoo.com (Indian stocks end in .NS or .BO).")

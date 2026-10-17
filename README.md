@@ -63,7 +63,7 @@ Run `build_dashboard.py` again any time to refresh the numbers.
 
 ## Daily price log (runs by itself)
 
-`log_prices.py` adds every trading day's opening and closing price for all 11 stocks, the Nifty 50 and the USD/INR rate to [`data/prices.csv`](data/prices.csv). The log starts on the buy date, 5 August 2026. You can open the file in Excel or Google Sheets. Its columns are:
+`log_prices.py` adds every trading day's opening and closing price for every stock in `portfolio.csv`, the Nifty 50 and the USD/INR rate to [`data/prices.csv`](data/prices.csv). The log starts on the buy date, 5 August 2026. You can open the file in Excel or Google Sheets. Its columns are:
 
 `date, ticker, name, open, close, currency`
 
@@ -71,7 +71,31 @@ Running it again never creates duplicates. Each run re-checks the last 10 days, 
 
 Once this repository is on GitHub, the log keeps itself up to date. The workflow in `.github/workflows/daily-prices.yml` runs on GitHub's servers every day at 4:00 am India time, after both markets have closed. It logs the day's prices, rebuilds the dashboard and saves both back to the repository. It doesn't need your computer to be on. To run it straight away, open the **Actions** tab, choose **Daily prices** and click **Run workflow**.
 
-The stocks are listed once, in `portfolio.py`. Both the log and the dashboard read them from there.
+## Adding a stock
+
+The portfolio lives in [`portfolio.csv`](portfolio.csv), one line per stock:
+
+```
+ticker,name,shares,buy_date
+TCS.NS,Tata Consultancy Services,3,2026-11-02
+```
+
+- **ticker:** the symbol on [finance.yahoo.com](https://finance.yahoo.com). Indian stocks end in `.NS` (NSE) or `.BO` (BSE). US stocks have no ending, e.g. `MSFT`.
+- **name:** what the dashboard should call it.
+- **shares:** how many you bought. Fractions are fine for US shares, e.g. `0.25`.
+- **buy_date:** the day you bought it, as year-month-day. The buy price is that day's opening price.
+
+To add a stock from your phone or any browser:
+
+1. Open `portfolio.csv` on GitHub and click the pencil icon.
+2. Add a line at the bottom.
+3. Click **Commit changes**.
+
+That starts the job straight away. Within a couple of minutes, the stock's prices since its buy date are in the log and it appears on the dashboard. Each stock is compared with the Nifty 50 over the days you've held it.
+
+If something on the line is wrong, such as a mistyped ticker, the job fails, nothing in the log changes, and GitHub emails you. The **Actions** tab shows a message saying exactly what to fix.
+
+To remove a stock, delete its line. Its past prices stay in the log.
 
 ## What each part of the code does
 
