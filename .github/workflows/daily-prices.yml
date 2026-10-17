@@ -1,6 +1,8 @@
 # Runs every day on GitHub's servers, so the log keeps going when your computer is off.
 # It adds the day's prices to data/prices.csv, rebuilds the dashboard, saves both back
-# to the repository and publishes the dashboard to GitHub Pages.
+# to the repository and publishes the dashboard to GitHub Pages:
+# https://samarthkalani0-lab.github.io/Stock-Charter/
+# (Pages must be set to Source: GitHub Actions in Settings → Pages.)
 # You can also run it by hand: Actions tab → Daily prices → Run workflow.
 name: Daily prices
 
