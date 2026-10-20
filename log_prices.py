@@ -33,7 +33,7 @@ else:
 first_logged = log.groupby("ticker")["date"].min().to_dict()
 last_logged = log.groupby("ticker")["date"].max().to_dict()
 
-new_rows, failed = [], []
+new_rows, failed, newest = [], [], {}
 for ticker, (name, wanted_from) in TRACKED.items():
     if first_logged.get(ticker, "9999") <= wanted_from:
         # Already logged back to the day we need: re-check from a few days before the
@@ -47,10 +47,17 @@ for ticker, (name, wanted_from) in TRACKED.items():
         failed.append(ticker)
         continue
     data.columns = data.columns.get_level_values(0)   # flatten yfinance's two-level column names
+    # The newest day Yahoo sent, and whether that day's prices were blank.
+    newest[ticker] = data.index[-1].strftime("%Y-%m-%d") + (" (blank)" if data[["Open", "Close"]].iloc[-1].isna().any() else "")
     digits = 4 if ticker == FX[0] else 2
     for day, row in data[["Open", "Close"]].dropna().iterrows():
         new_rows.append([day.strftime("%Y-%m-%d"), ticker, name,
                          round(float(row["Open"]), digits), round(float(row["Close"]), digits), currency(ticker)])
+
+# On GitHub this appears as a note on the run (visible to anyone), so it's easy to see
+# how fresh Yahoo's data was without opening the full log.
+summary = ", ".join(f"{t} {d}" for t, d in newest.items())
+print(f"::notice title=Newest day from Yahoo::{summary}" if os.environ.get("GITHUB_ACTIONS") else f"Newest day from Yahoo: {summary}")
 
 if len(failed) == len(TRACKED):
     sys.exit("No prices came back for any stock. Yahoo Finance may be down; nothing was changed.")
