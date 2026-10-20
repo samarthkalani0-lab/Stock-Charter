@@ -7,9 +7,12 @@
 name: Daily prices
 
 on:
+  # Three times a day, because Yahoo sometimes publishes a day's prices hours late.
+  # Runs that find nothing new change nothing. (GitHub can start them up to an hour late.)
   schedule:
-    # 22:30 UTC = 4:00 am in India, after both the Indian and the US markets have closed.
-    - cron: "30 22 * * *"
+    - cron: "30 11 * * *"   # 5:00 pm India time, after the Indian market closes
+    - cron: "30 22 * * *"   # 4:00 am India time, after the US market closes
+    - cron: "30 4 * * *"    # 10:00 am India time, to catch anything published late
   workflow_dispatch:
   # Also run when the job or the scripts change, so an update takes effect straight away.
   # The job's own daily commits only touch data/ and dashboard/, so they don't trigger it.

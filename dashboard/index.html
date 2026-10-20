@@ -390,6 +390,7 @@ window.PORTFOLIO_DATA = {"generated": "2026-10-20", "buyDate": "2026-08-05", "ma
   const best = sorted[0], worst = sorted[sorted.length - 1];
   const aboveNow = stocks.filter(s => s.gapPct > 0).length;
   document.getElementById("facts").innerHTML = [
+    `Prices as of <b>${shortDate(now[0])}</b>`,
     `<b>${upCount} of ${stocks.length}</b> stocks are up`,
     `Best: <b>${best.name}</b> <span class="up">${pct(best.returnPct)}</span>`,
     `Worst: <b>${worst.name}</b> <span class="down">${pct(worst.returnPct)}</span>`,
