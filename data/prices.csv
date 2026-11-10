@@ -880,4 +880,5 @@ date,ticker,name,open,close,currency
 2026-11-09,RELIANCE.NS,Reliance Industries,1317.0,1324.4,INR
 2026-11-09,SBIN.NS,State Bank of India,1030.0,1042.0,INR
 2026-11-09,^NSEI,Nifty 50,25076.4,25044.65,points
+2026-11-10,AAPL,Apple,351.55,347.68,USD
 2026-11-10,INR=X,US dollar in rupees,93.918,93.918,INR
